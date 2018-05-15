@@ -235,6 +235,8 @@ Building blocks:
 * use KStream.groupBy, windowedBy, aggregate
 See https://kafka.apache.org/documentation/streams/developer-guide/dsl-api.html#hopping-time-windows
 
+Log the resulting windows to see how the average is calculated over multiple partially overlapping windows per id.
+
 ## Exercise 4: Health Check a Kafka Streams application
 TODO, my Spring Actuator health check implementation for Kafka Streams has stopped working in Spring Boot 2 :-)
 
