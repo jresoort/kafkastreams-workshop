@@ -184,7 +184,7 @@ Building blocks:
 * use KStream.foreach to log each record  
 
 Tips:
-Because Kafka does not know the message format, we will need use a custom JsonSerde to deserialize the SensorData object:
+Because Kafka does not know the message format, we will need use a custom JsonSerde to deserialize the SensorData object. We tell the builder to consume messages with the sensorDataSerde:
 ```
 JsonSerde<SensorData> sensorDataSerde = new JsonSerde<>(SensorData.class);
 KStream<String, SensorData> sensorDataStream = builder.stream(TopicNames.RECEIVED_SENSOR_DATA, Consumed.with(Serdes.String(), sensorDataSerde));
