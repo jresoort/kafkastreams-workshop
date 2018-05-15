@@ -216,11 +216,11 @@ Building blocks:
 
 ### Join messages with a kTable of valid sensor ids. And filter all invalid messages.
 Building blocks:
-* use KStream.join, KStream.filter, KStream.to
+* use KStream.join
 
 In the scripts folder of this repository there is a script named "add_allowed_sensors.sh". You can use this script to create the "allowed-sensor-ids" topic and to insert some test data.
 
-The raw data that is inserted does not yet have a key. A solution is to create a KStream for that topic and us KStream.map or KStream.selectKey. Write this stream to a new topic using the KSTream.to method. After that you can create a KTable.
+The raw data that is inserted does not yet have a key. A solution is to create a KStream for that topic and use KStream.map or KStream.selectKey to convert to a message with a key. Write this stream to a new topic using the KSTream.to method. After that you can create a KTable.
 
 Example:
 ```
@@ -228,8 +228,7 @@ KStream<String, String> idStream = builder.stream(TopicNames.ALLOWED_SENSOR_IDS,
 idStream.selectKey((k,v) -> k).to(TopicNames.ALLOWED_SENSOR_IDS_KEYED);
 KTable<String, String> idTable = builder.table(TopicNames.ALLOWED_SENSOR_IDS_KEYED, Consumed.with(Serdes.String(), Serdes.String()))
 ```
-
-
+We can join with the kTable by using the KStream.join method.
 
 ### Group the messages in a time window and calculate average temperature
 

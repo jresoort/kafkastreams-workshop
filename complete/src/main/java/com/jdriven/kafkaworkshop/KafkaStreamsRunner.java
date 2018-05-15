@@ -1,17 +1,17 @@
 package com.jdriven.kafkaworkshop;
 
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.streams.Consumed;
-import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.kstream.Produced;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.kafka.support.serializer.JsonSerde;
 import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 @Component
 public class KafkaStreamsRunner implements CommandLineRunner {
@@ -32,11 +32,15 @@ public class KafkaStreamsRunner implements CommandLineRunner {
         JsonSerde<SensorData> sensorDataSerde = new JsonSerde<>(SensorData.class);
         KStream<String, SensorData> sensorDataStream = builder.stream(TopicNames.RECEIVED_SENSOR_DATA, Consumed.with(Serdes.String(), sensorDataSerde));
 
-        sensorDataStream.foreach((key, value) -> LOGGER.info("received {}", value.toString()));
+        sensorDataStream.foreach((k,v) -> LOGGER.info("received {}", v.toString()));
 
         KStream<String, String> idStream = builder.stream(TopicNames.ALLOWED_SENSOR_IDS, Consumed.with(Serdes.String(), Serdes.String()));
-        idStream.selectKey((k,v) -> k).to(TopicNames.ALLOWED_SENSOR_IDS_KEYED);
+        idStream.selectKey((k,v) -> v)
+                .to(TopicNames.ALLOWED_SENSOR_IDS_KEYED, Produced.with(Serdes.String(),Serdes.String()));
         KTable<String, String> idTable = builder.table(TopicNames.ALLOWED_SENSOR_IDS_KEYED, Consumed.with(Serdes.String(), Serdes.String()));
+
+        sensorDataStream.join(idTable, (v1, v2) -> v1)
+                .foreach((k,v) -> LOGGER.info("This is a valid sensor. {}", v.toString()));
 
         KafkaStreams streams = new KafkaStreams(builder.build(), config);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -45,5 +49,6 @@ public class KafkaStreamsRunner implements CommandLineRunner {
         streams.start();
 
     }
+
 }
 
