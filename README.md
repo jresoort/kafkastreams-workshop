@@ -230,7 +230,10 @@ KTable<String, String> idTable = builder.table(TopicNames.ALLOWED_SENSOR_IDS_KEY
 ```
 We can join with the kTable by using the KStream.join method.
 
-### Group the messages in a time window and calculate average temperature
+### Group the messages by id, in a hopping time window with a size 5 minutes and an advance interval of 1 minute and calculate average temperature.
+Building blocks:
+* use KStream.groupBy, windowedBy, aggregate
+See https://kafka.apache.org/documentation/streams/developer-guide/dsl-api.html#hopping-time-windows
 
 ## Exercise 4: Health Check a Kafka Streams application
 TODO, my Spring Actuator health check implementation for Kafka Streams has stopped working in Spring Boot 2 :-)
