@@ -171,7 +171,7 @@ application.stream.groupid=kafkastreams
 
 
 ### Building a Stream topology and running it in Spring Boot
-Create a class KafkaStreamsRunner that implements CommandLineRunner, and wire the StremsConfig and StreamsBuilder
+Create a class KafkaStreamsRunner that implements CommandLineRunner, and wire the StreamsConfig and StreamsBuilder
 ```
 @Component
 public class KafkaStreamsRunner implements CommandLineRunner {
