@@ -1,0 +1,16 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Sensor simulator</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+<h1>Submit sensor data</h1>
+<form action="#" th:action="@{/sensor}" th:object="${sensorData}" method="post">
+    <p>Id: <input type="text" th:field="*{id}" /></p>
+    <p>Temp: <input type="text" th:field="*{temperature}" /></p>
+    <p>Voltage: <input type="text" th:field="*{voltage}" /></p>
+    <p><input type="submit" value="Submit" /> <input type="reset" value="Reset" /></p>
+</form>
+</body>
+</html>
