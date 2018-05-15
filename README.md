@@ -234,7 +234,8 @@ The raw data that is inserted does not yet have a key. A solution is to create a
 Example:
 ```
 KStream<String, String> idStream = builder.stream(TopicNames.ALLOWED_SENSOR_IDS, Consumed.with(Serdes.String(), Serdes.String()));
-idStream.selectKey((k,v) -> v).to(TopicNames.ALLOWED_SENSOR_IDS_KEYED);
+idStream.selectKey((k,v) -> v)
+        .to(TopicNames.ALLOWED_SENSOR_IDS_KEYED, Produced.with(Serdes.String(),Serdes.String()));
 KTable<String, String> idTable = builder.table(TopicNames.ALLOWED_SENSOR_IDS_KEYED, Consumed.with(Serdes.String(), Serdes.String()))
 ```
 We can join with the kTable by using the KStream.join method.
