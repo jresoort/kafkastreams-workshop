@@ -121,7 +121,9 @@ For specifics, see the Spring Kafka documentation
 ### Try it out
 Congratulations, you have implemented your first Spring Kafka application. You can try it out now.
 Make sure Kafka and Zookeeper are running and you have created the required topic.
+```
 bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic received-sensor-data
+```
 Browse to http://localhost:8080/sensor and submit some sensor data!
 
 You should also consider adding some unit test coverage. See https://docs.spring.io/spring-kafka/reference/htmlsingle/#testing for details about unit testing Spring Kafka applications
@@ -182,9 +184,10 @@ Building blocks:
 * use KStream.foreach to log each record  
 
 Tips:
-use a custom JsonSerde to deserialize the SensorData object:
+Because Kafka does not know the message format, we will need use a custom JsonSerde to deserialize the SensorData object:
 ```
 JsonSerde<SensorData> sensorDataSerde = new JsonSerde<>(SensorData.class);
+KStream<String, SensorData> sensorDataStream = builder.stream(TopicNames.RECEIVED_SENSOR_DATA, Consumed.with(Serdes.String(), sensorDataSerde));
 ```
 
 For proper shutdown we need to add a shutdownHook. Use the following code to start the KafkaStreams .
@@ -210,6 +213,23 @@ Building blocks:
 ### Write a record to "low-voltage-alert" whenever SensorData comes in with a voltage lower than 3.
 Building blocks:
 * use KStream.filter, KStream.map, KStream.to
+
+### Join messages with a kTable of valid sensor ids. And filter all invalid messages.
+Building blocks:
+* use KStream.join, KStream.filter, KStream.to
+
+In the scripts folder of this repository there is a script named "add_allowed_sensors.sh". You can use this script to create the "allowed-sensor-ids" topic and to insert some test data.
+
+The raw data that is inserted does not yet have a key. A solution is to create a KStream for that topic and us KStream.map or KStream.selectKey. Write this stream to a new topic using the KSTream.to method. After that you can create a KTable.
+
+Example:
+```
+KStream<String, String> idStream = builder.stream(TopicNames.ALLOWED_SENSOR_IDS, Consumed.with(Serdes.String(), Serdes.String()));
+idStream.selectKey((k,v) -> k).to(TopicNames.ALLOWED_SENSOR_IDS_KEYED);
+KTable<String, String> idTable = builder.table(TopicNames.ALLOWED_SENSOR_IDS_KEYED, Consumed.with(Serdes.String(), Serdes.String()))
+```
+
+
 
 ### Group the messages in a time window and calculate average temperature
 

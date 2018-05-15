@@ -28,7 +28,7 @@ public class SensorController {
 
     @PostMapping("/sensor")
     public String sensorSubmit(@ModelAttribute SensorData sensorData) {
-        LOGGER.info("TODO submit data");
+        LOGGER.info("TODO submit data with spring kafkaTemplate");
         return "sensor";
     }
 
