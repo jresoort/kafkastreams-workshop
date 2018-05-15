@@ -121,7 +121,9 @@ For specifics, see the Spring Kafka documentation
 ### Try it out
 Congratulations, you have implemented your first Spring Kafka application. You can try it out now.
 Make sure Kafka and Zookeeper are running and you have created the required topic.
-bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic received-sensor-data
+
+`> bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic received-sensor-data`
+
 Browse to http://localhost:8080/sensor and submit some sensor data!
 
 You should also consider adding some unit test coverage. See https://docs.spring.io/spring-kafka/reference/htmlsingle/#testing for details about unit testing Spring Kafka applications
