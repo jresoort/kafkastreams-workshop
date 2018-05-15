@@ -32,7 +32,7 @@ public class KafkaWorkshopConfig {
     @Value("${application.consumer.groupid}")
     private String groupId;
 
-    @Value("application.stream.applicationId")
+    @Value("${application.stream.applicationId}")
     private String applicationId;
 
 

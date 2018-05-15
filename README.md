@@ -52,6 +52,9 @@ Add the following property to your application.properties:
 ### Publish sensor data to the topic "received-sensor-data" using a Spring KafkaTemplate
 To use a KafkaTemplate we need to setup some configuration and construct the KafkaTemplate. Add the following to the KafkaWorkshopConfig class:
 ```
+@Value("${kafka.bootstrap.servers}")
+private String bootstrapServers;
+
 public Map<String, Object> producerConfigs() {
      Map<String, Object> props = new HashMap<>();
      props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -88,6 +91,9 @@ application.consumer.groupid=springkafka
 
 Before we can use a KafkaListener we need to setup a KafkaListenerContainerFactory. Add the following to your Config class:
 ```
+@Value("${application.consumer.groupid}")
+private String groupId;
+
 @Bean
 public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<Integer, String>> kafkaListenerContainerFactory() {
     ConcurrentKafkaListenerContainerFactory<Integer, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
@@ -149,6 +155,9 @@ Add the Kafka Streams dependency to your pom.xml:
 
 Set up StreamsConfig and a StreamsBuilder in the Config class:
 ```
+@Value("${application.stream.applicationId}")
+private String applicationId;
+
 @Bean
 public StreamsConfig streamsConfig() {
     Map<String, Object> props = new HashMap<>();
