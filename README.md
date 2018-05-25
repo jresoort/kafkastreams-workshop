@@ -225,7 +225,7 @@ Building blocks:
 
 In the scripts folder of this repository there is a script named "add_allowed_sensors.sh". You can use this script to create the "allowed-sensor-ids" topic and to insert some test data. You might need to adapt the script a bit to match your directory structure and/or operating system :-)
 
-The raw data that is inserted does not yet have a key. A solution is to create a KStream for that topic and use KStream.map or KStream.selectKey to convert to a message with a key. Write this stream to a new topic using the KSTream.to method. After that you can create a KTable.
+The raw data that is inserted does not yet have a key. A solution is to create a KStream for that topic and use KStream.map or KStream.selectKey to convert to a message with a key. Write this stream to a new topic using the KStream.to method. After that you can create a KTable.
 
 Example:
 ```
