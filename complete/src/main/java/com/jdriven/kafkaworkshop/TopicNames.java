@@ -8,4 +8,5 @@ public class TopicNames {
     public static final String ALLOWED_SENSOR_IDS_KEYED = "allowed-sensor-ids-keyed";
 
 
+    public static final String AVERAGE_TEMPS = "average-temps";
 }

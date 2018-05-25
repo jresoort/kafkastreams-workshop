@@ -37,7 +37,7 @@ Add the Spring Kafka dependency to your pom.xml
 
 Add the following annotation to the KafkaWorkshopConfig class:
 ```
-  @EnableKafka
+@EnableKafka
 ```
 
 This enables the Spring Kafka listeners
@@ -45,7 +45,7 @@ This enables the Spring Kafka listeners
 The Kafka client library needs to know where to find the Kafka server
 Add the following property to your application.properties:
 ```
-  kafka.bootstrap.servers=localhost:9092
+kafka.bootstrap.servers=localhost:9092
 ```
 
 
@@ -117,6 +117,8 @@ public Map<String, Object> consumerConfigs() {
 }
 ```
 
+There are a lot more ProducerConfig and ConsumerConfig properties you can set, but for now these are ok. Check the kafka documentation if you want to know more.
+
 Now we can implement a Kafka Listener class. The Kafka Listener should have a method annotated with:
 ```
 @KafkaListener(topics = TopicNames.RECEIVED_SENSOR_DATA)
@@ -126,7 +128,7 @@ For specifics, see the Spring Kafka documentation
 
 ### Try it out
 Congratulations, you have implemented your first Spring Kafka application. You can try it out now.
-Make sure Kafka and Zookeeper are running and you have created the required topic.
+Make sure Kafka and Zookeeper are running and you have created the required topic. (Windows users can use the .bat script)
 ```
 bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic received-sensor-data
 ```
@@ -153,12 +155,18 @@ Add the Kafka Streams dependency to your pom.xml:
 </dependency>
 ```
 
-Set up StreamsConfig and a StreamsBuilder in the Config class:
+Create a separate Configuration class for the Kafka Streams stuff. And annotate it with
+```
+@Configuration
+@EnableKafkaStreams
+```
+
+Sett up a StreamsConfig in the Config class:
 ```
 @Value("${application.stream.applicationId}")
 private String applicationId;
 
-@Bean
+@Bean(name = KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_CONFIG_BEAN_NAME)
 public StreamsConfig streamsConfig() {
     Map<String, Object> props = new HashMap<>();
     props.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
@@ -167,26 +175,21 @@ public StreamsConfig streamsConfig() {
     return new StreamsConfig(props);
 }
 
-@Bean
-public StreamsBuilder streamBuilder() {
-    return new StreamsBuilder();
-}
-
 ```
-Make sure you give your Streams application a unique consumer group id. This can not be the same id as the Kafka Consumer from exercise 1! Add the following property to your application.properties
+Make sure you give your Streams application a unique applicationId. This can not be the same id as the Kafka Consumer groupId from exercise 1! Add the following property to your application.properties
 ```
-application.stream.groupid=kafkastreams
+application.stream.applicationId=kafkastreams
 ```
 
 
 ### Building a Stream topology and running it in Spring Boot
-Create a class KafkaStreamsRunner that implements CommandLineRunner, and wire the StreamsConfig and StreamsBuilder
+Add a bean method to your KafkaStreamConfig class that accepts a StreamsBuilder and returns a KStream.
 ```
-@Component
-public class KafkaStreamsRunner implements CommandLineRunner {
+@Bean
+public KStream<String, SensorData> kStream(StreamsBuilder builder) {
 ```
 
-Override the run method and implement a Streams application that logs all incoming records on the "received-sensor-data" topic.
+Implement a Streams application that logs all incoming records on the "received-sensor-data" topic.
 
 Building blocks:
 * use StreamsBuilder.stream to construct a stream
@@ -199,14 +202,6 @@ JsonSerde<SensorData> sensorDataSerde = new JsonSerde<>(SensorData.class);
 KStream<String, SensorData> sensorDataStream = builder.stream(TopicNames.RECEIVED_SENSOR_DATA, Consumed.with(Serdes.String(), sensorDataSerde));
 ```
 
-For proper shutdown we need to add a shutdownHook. Use the following code to start the KafkaStreams .
-```
-KafkaStreams streams = new KafkaStreams(builder.build(), config);
-Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-    streams.close();
-}));
-streams.start();
-```
 
 If you have setup successfully, you now see two log lines in the console logging. One for the Listener and one for the Stream.
 As you can see in the console logging, the Stream is executed on a separate Thread.
@@ -219,15 +214,16 @@ Now we have a minimal Streams application we can explore the more advanced Strea
 Building blocks:
 * use KStream.filter
 
-### Write a record to "low-voltage-alert" whenever SensorData comes in with a voltage lower than 3.
-Building blocks:
+### Write a record to "low-voltage-alert" topic whenever SensorData comes in with a voltage lower than 3.
+Possible building blocks:
 * use KStream.filter, KStream.map, KStream.to
+Tip: You could use a new data format for a low voltage alert, or just go for a simple String value. In any way you will need to pass the KStream.to method a Produced.with(keySerde, valueSerde) to tell Kafka Streams how to serialize the object.
 
 ### Join messages with a kTable of valid sensor ids. And filter all invalid messages.
 Building blocks:
-* use KStream.join
+* use KStream.join 
 
-In the scripts folder of this repository there is a script named "add_allowed_sensors.sh". You can use this script to create the "allowed-sensor-ids" topic and to insert some test data.
+In the scripts folder of this repository there is a script named "add_allowed_sensors.sh". You can use this script to create the "allowed-sensor-ids" topic and to insert some test data. You might need to adapt the script a bit to match your directory structure and/or operating system :-)
 
 The raw data that is inserted does not yet have a key. A solution is to create a KStream for that topic and use KStream.map or KStream.selectKey to convert to a message with a key. Write this stream to a new topic using the KSTream.to method. After that you can create a KTable.
 
@@ -238,7 +234,8 @@ idStream.selectKey((k,v) -> v)
         .to(TopicNames.ALLOWED_SENSOR_IDS_KEYED, Produced.with(Serdes.String(),Serdes.String()));
 KTable<String, String> idTable = builder.table(TopicNames.ALLOWED_SENSOR_IDS_KEYED, Consumed.with(Serdes.String(), Serdes.String()))
 ```
-We can join with the kTable by using the KStream.join method.
+We can join with the kTable by using the KStream.join method. KStream.join implicity filters messages whenever a join cannot be made. If you don't want that you can use KStream.leftJoin instead.
+
 
 ### Group the messages by id, in a hopping time window with a size 5 minutes and an advance interval of 1 minute and calculate average temperature.
 Building blocks:
@@ -246,9 +243,3 @@ Building blocks:
 See https://kafka.apache.org/documentation/streams/developer-guide/dsl-api.html#hopping-time-windows
 
 Log the resulting windows to see how the average is calculated over multiple partially overlapping windows per id.
-
-## Exercise 4: Health Check a Kafka Streams application
-TODO, my Spring Actuator health check implementation for Kafka Streams has stopped working in Spring Boot 2 :-)
-
-## Exercise 5: Automated testing
-Maybe later :-)

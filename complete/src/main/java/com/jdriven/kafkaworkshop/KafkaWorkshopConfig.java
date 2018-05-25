@@ -2,11 +2,8 @@ package com.jdriven.kafkaworkshop;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,16 +22,11 @@ import java.util.Map;
 @EnableKafka
 public class KafkaWorkshopConfig {
 
-
     @Value("${kafka.bootstrap.servers}")
     private String bootstrapServers;
 
     @Value("${application.consumer.groupid}")
     private String groupId;
-
-    @Value("${application.stream.applicationId}")
-    private String applicationId;
-
 
     @Bean
     public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<Integer, String>> kafkaListenerContainerFactory() {
@@ -76,20 +68,6 @@ public class KafkaWorkshopConfig {
         return new KafkaTemplate<>(producerFactory());
     }
 
-
-    @Bean
-    public StreamsConfig streamsConfig() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
-        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-
-        return new StreamsConfig(props);
-    }
-
-    @Bean
-    public StreamsBuilder streamBuilder() {
-        return new StreamsBuilder();
-    }
 
 }
 
