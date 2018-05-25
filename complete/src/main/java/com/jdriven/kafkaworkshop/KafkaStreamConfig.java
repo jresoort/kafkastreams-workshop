@@ -75,11 +75,11 @@ public class KafkaStreamConfig {
 
         //Group the messages by id, in a hopping time window with a size 5 minutes and an advance interval of 1 minute and calculate average temperature.
         sensorDataStream.groupByKey()
-                .windowedBy(TimeWindows.of(300000).advanceBy(100000))
+                .windowedBy(TimeWindows.of(300000).advanceBy(60000))
                 .aggregate(SumCount::new, (key, value, aggregate) -> aggregate.addValue(value.getTemperature()), Materialized.with(Serdes.String(), new JsonSerde<>(SumCount.class)))
                 .mapValues(SumCount::average, Materialized.with(new WindowedSerde<>(Serdes.String()), Serdes.Double()))
                 .toStream()
-                .map(((key, average) -> new KeyValue<>(key.key(), new Average(average, key.window().start(), key.window().start() + 30000))))
+                .map(((key, average) -> new KeyValue<>(key.key(), new Average(average, key.window().start(), key.window().start() + 300000))))
                 //write to topic and continue the stream processing using KStream.through
                 .through(TopicNames.AVERAGE_TEMPS, Produced.with(Serdes.String(), new JsonSerde<>(Average.class)))
                 .foreach((key, average) -> LOGGER.info(String.format("Received average %s for id %s on %s", average, key, TopicNames.AVERAGE_TEMPS)));
