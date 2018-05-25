@@ -79,7 +79,11 @@ Update the SensorController class by wiring the KafkaTemplate:
     private KafkaTemplate<String, SensorData> kafkaTemplate;
 ```
 
-Now we can implement the publishing of sensor data in the SensorController class using the kafkaTemplate send method.
+Now we can implement the publishing of sensor data in the SensorController class. Use the KafkaTemplate.send method to publish sensor data messages.
+
+Some side notes: 
+* Publishing messages is done asynchronously. The KafkaTemplate.send method returns a ListenableFuture.
+* The KafkaTemplate.send method is overloaded. Use the correct one to publish messages on the "received-sensor-data" topic with the SensorData id as a key, and the SensorData as value.
 For specifics, see the Spring Kafka documentation.
 
 
@@ -119,7 +123,7 @@ public Map<String, Object> consumerConfigs() {
 
 There are a lot more ProducerConfig and ConsumerConfig properties you can set, but for now these are ok. Check the kafka documentation if you want to know more.
 
-Now we can implement a Kafka Listener class. The Kafka Listener should have a method annotated with:
+Now we can implement a Kafka Listener class. Create a new class, annotate it with @Component and add a method annotated with:
 ```
 @KafkaListener(topics = TopicNames.RECEIVED_SENSOR_DATA)
 ```
@@ -161,8 +165,12 @@ Create a separate Configuration class for the Kafka Streams stuff. And annotate 
 @EnableKafkaStreams
 ```
 
-Sett up a StreamsConfig in the Config class:
+Set up a StreamsConfig in the Config class:
 ```
+
+@Value("${kafka.bootstrap.servers}")
+private String bootstrapServers;
+
 @Value("${application.stream.applicationId}")
 private String applicationId;
 
