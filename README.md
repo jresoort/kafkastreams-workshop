@@ -1,6 +1,6 @@
 # kafkastreams-workshop
 
-## prerequisites
+## Prerequisites
 * Make sure you have JDK8 or higher installed
 * Make sure you have Apache Maven installed (optional)
 * To get started with kafka, execute steps 1 to 5 from the Kafka quickstart guide. This will get you a running Kafka server.
@@ -225,6 +225,7 @@ Building blocks:
 ### Write a record to "low-voltage-alert" topic whenever SensorData comes in with a voltage lower than 3.
 Possible building blocks:
 * use KStream.filter, KStream.map, KStream.to
+
 Tip: You could use a new data format for a low voltage alert, or just go for a simple String value. In any way you will need to pass the KStream.to method a Produced.with(keySerde, valueSerde) to tell Kafka Streams how to serialize the object.
 
 ### Join messages with a kTable of valid sensor ids. And filter all invalid messages.
