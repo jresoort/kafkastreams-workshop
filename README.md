@@ -245,6 +245,11 @@ KTable<String, String> idTable = builder.table(TopicNames.ALLOWED_SENSOR_IDS_KEY
 ```
 We can join with the kTable by using the KStream.join method. KStream.join implicity filters messages whenever a join cannot be made. If you don't want that you can use KStream.leftJoin instead.
 
+### Join messages with a kTable of valid sensor ids. And split the stream in two separate streams of valid and invalid messages.
+Building blocks:
+* use KStream.leftJoin, Kstream.branch
+
+Kstream.branch produces an array of streams.
 
 ### Group the messages by id, in a hopping time window with a size 5 minutes and an advance interval of 1 minute and calculate average temperature.
 Building blocks:
