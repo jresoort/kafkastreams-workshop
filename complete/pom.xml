@@ -8,7 +8,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>kafkastreams</name>
+	<name>kafkastreams-complete</name>
 	<description>Demo project for Spring Boot</description>
 
 	<parent>
@@ -24,6 +24,7 @@
 		<java.version>1.8</java.version>
 		<kafka.version>1.1.0</kafka.version>
 		<spring-kafka.version>2.1.6.RELEASE</spring-kafka.version>
+		<lombok.version>1.16.14</lombok.version>
 	</properties>
 
 	<dependencies>
@@ -48,6 +49,54 @@
 			<groupId>org.apache.kafka</groupId>
 			<artifactId>kafka-streams</artifactId>
 			<version>${kafka.version}</version>
+		</dependency>
+
+		<!-- https://docs.spring.io/spring-kafka/docs/2.1.6.BUILD-SNAPSHOT/reference/html/deps-for-11x.html -->
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka-clients</artifactId>
+			<version>1.1.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka-clients</artifactId>
+			<version>1.1.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka_2.11</artifactId>
+			<version>1.1.0</version>
+			<classifier>test</classifier>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka_2.11</artifactId>
+			<version>1.1.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>${lombok.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka-test</artifactId>
+			<version>${spring-kafka.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- added to prevent ClassNotFoundException during test -->
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.17</version>
+			<scope>test</scope>
 		</dependency>
 
 		<dependency>
