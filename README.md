@@ -138,11 +138,10 @@ bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 -
 ```
 Browse to http://localhost:8080/sensor and submit some sensor data!
 
-You should also consider adding some unit test coverage. See https://docs.spring.io/spring-kafka/reference/htmlsingle/#testing for details about unit testing Spring Kafka applications
-
+You should also consider adding some unit test coverage. For now we will leave that and continue with Exercise 2 to learn about Kafka Streams. Exercise 3 will cover unit testing Spring Kafka applications.
 
 ## Exercise 2: Kafka Streams
-In this exercise we will be extending the application built in Exercise 1. We will use the plain Kafka Streams library to implement Kafka Streams processing on top of a Spring Boot application
+In this exercise we will be extending the application built in Exercise 1. We will use the plain Kafka Streams library to implement Kafka Streams processing on top of a Spring Boot application.
 
 Additional Kafka Streams documentation can be found here:
 https://kafka.apache.org/11/documentation/streams/developer-guide/
@@ -255,5 +254,106 @@ Kstream.branch produces an array of streams.
 Building blocks:
 * use KStream.groupBy, windowedBy, aggregate
 See https://kafka.apache.org/documentation/streams/developer-guide/dsl-api.html#hopping-time-windows
+
+
+## Exercise 3: Unit testing Spring Kafka applications
+
+Spring Kafka comes with some tooling for running an embedded Kafka server in your unit tests.
+
+### Configuring Spring Kafka tests
+
+See https://docs.spring.io/spring-kafka/docs/2.1.6.RELEASE/reference/html/_reference.html#testing for details.
+
+Add the following dependencies to your pom.xml:
+```
+<dependency>
+	<groupId>org.springframework.kafka</groupId>
+	<artifactId>spring-kafka-test</artifactId>
+	<version>${spring-kafka.version}</version>
+</dependency>
+<dependency>
+	<groupId>log4j</groupId>
+	<artifactId>log4j</artifactId>
+	<version>1.2.17</version>
+	<scope>test</scope>
+</dependency>
+```	
+		
+Because we are using the Kafka 1.1 clients, we will need to make sure the right kafka libraries are available during tests:
+```
+<dependency>
+	<groupId>org.apache.kafka</groupId>
+	<artifactId>kafka_2.11</artifactId>
+	<version>${kafka.version}</version>
+	<scope>test</scope>
+</dependency>
+
+<dependency>
+	<groupId>org.apache.kafka</groupId>
+	<artifactId>kafka_2.11</artifactId>
+	<version>${kafka.version}</version>
+	<classifier>test</classifier>
+	<scope>test</scope>
+</dependency>
+```
+
+To override the configuration during tests, create an application.properties file in src/test/resources
+Add the following properties:
+```
+kafka.bootstrap.servers=${spring.embedded.kafka.brokers}
+application.consumer.groupid=springkafka
+application.stream.applicationId=kafkastreams
+```
+
+### Enable embedded kafka server
+We will extend the KafkaWorkshopApplicationTests to have an embedded Kafka server running.
+First we add the DirtiesContext and EmbeddedKafka annotations to our class. We include all topics that are used in our application. The class will look like this:
+
+```
+...
+@RunWith(SpringRunner.class)
+@SpringBootTest
+@DirtiesContext
+@EmbeddedKafka(partitions = 1,
+		topics = {
+				TopicNames.RECEIVED_SENSOR_DATA,
+				TopicNames.LOW_VOLTAGE_ALERT,
+				TopicNames.ALLOWED_SENSOR_IDS_KEYED,
+				TopicNames.ALLOWED_SENSOR_IDS,
+				TopicNames.AVERAGE_TEMPS})
+public class KafkaWorkshopApplicationTests {
+...
+```
+Add the KafkaEmbedded that Spring makes available in its context. Also add the SensorController.
+```
+	@Autowired
+	private KafkaEmbedded embeddedKafka;
+
+	@Autowired
+	private SensorController controller;
+```
+
+### Write the tests for low voltage alert
+Use the controller.sensorSubmt method create new sensor data and then listen on the embeddedKafka to see if low voltage alerts come in.
+
+Use the following code to consume the alerts. Depending on your message format you might need to use different serializers.
+```
+Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("testGroup", "true", this.embeddedKafka);
+consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+ConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+Consumer<String, String> consumer = cf.createConsumer();
+this.embeddedKafka.consumeFromAnEmbeddedTopic(consumer, TopicNames.LOW_VOLTAGE_ALERT);
+ConsumerRecords<String, String> alerts = KafkaTestUtils.getRecords(consumer);
+```
+
+You should now be able to receive the alerts. Write assertions to check if the correct alerts are received.
+
+If you like, you can add test cases for the other message flows.
+
+
+
+
 
 Log the resulting windows to see how the average is calculated over multiple partially overlapping windows per id.
