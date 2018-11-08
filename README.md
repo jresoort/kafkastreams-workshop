@@ -281,7 +281,7 @@ Add the following dependencies to your pom.xml:
 	<version>1.2.17</version>
 	<scope>test</scope>
 </dependency>
-```	
+```
 		
 Because we are using the Kafka 1.1 clients, we will need to make sure the right kafka libraries are available during tests:
 ```
