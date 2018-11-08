@@ -138,7 +138,7 @@ bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 -
 ```
 Browse to http://localhost:8080/sensor and submit some sensor data!
 
-You should also consider adding some unit test coverage. For now we will leave that and continue with Exercise 2 to learn about Kafka Streams. Exercise 3 will cover unit testing Spring Kafka applications.
+You should also consider adding some unit test coverage. For now we will skip that and continue with Exercise 2 to learn about Kafka Streams. Exercise 3 will cover unit testing Spring Kafka applications.
 
 ## Exercise 2: Kafka Streams
 In this exercise we will be extending the application built in Exercise 1. We will use the plain Kafka Streams library to implement Kafka Streams processing on top of a Spring Boot application.
@@ -297,7 +297,7 @@ Because we are using the Kafka 1.1 clients, we will need to make sure the right 
 </dependency>
 ```
 
-To override the configuration during tests, create an application.properties file in src/test/resources
+To override the configuration during tests, create an application.properties file in src/test/resources.
 Add the following properties:
 ```
 kafka.bootstrap.servers=${spring.embedded.kafka.brokers}
@@ -334,7 +334,7 @@ Add the KafkaEmbedded that Spring makes available in its context. Also add the S
 ```
 
 ### Write the tests for low voltage alert
-Use the controller.sensorSubmt method create new sensor data and then listen on the embeddedKafka to see if low voltage alerts come in.
+Use the controller.sensorSubmit method to publish new sensor data and then listen on the embeddedKafka to see if low voltage alerts come in.
 
 Use the following code to consume the alerts. Depending on your message format you might need to use different serializers.
 ```
