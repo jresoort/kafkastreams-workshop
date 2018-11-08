@@ -334,7 +334,7 @@ Add the KafkaEmbedded that Spring makes available in its context. Also add the S
 ```
 
 ### Write the tests for low voltage alert
-Use the controller.sensorSubmit method to publish new sensor data and then listen on the embeddedKafka to see if low voltage alerts come in.
+Create a new test method and use the controller.sensorSubmit method to publish new sensor data and then listen on the embeddedKafka to see if low voltage alerts come in.
 
 Use the following code to consume the alerts. Depending on your message format you might need to use different serializers.
 ```
