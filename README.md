@@ -234,7 +234,7 @@ Building blocks:
 In the scripts folder of this repository there is a script named "add_allowed_sensors.sh". You can use this script to create the "allowed-sensor-ids" topic and to insert some test data. You might need to adapt the to your environment a bit to match your directory structure by calling it 
 like 
 ```
-KAFKA_DIR=/dir/to/kafka
+export KAFKA_DIR=/dir/to/kafka
 ./add_allowed_sensors.sh
 ```
 
