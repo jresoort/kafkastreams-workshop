@@ -6,42 +6,27 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.*;
-import org.apache.kafka.streams.kstream.internals.WindowedDeserializer;
-import org.apache.kafka.streams.kstream.internals.WindowedSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafkaStreams;
 import org.springframework.kafka.annotation.KafkaStreamsDefaultConfiguration;
 import org.springframework.kafka.support.serializer.JsonSerde;
 
+import java.time.Duration;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
 @EnableKafkaStreams
+//@AutoConfigureBefore
 public class KafkaStreamConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamConfig.class);
-
-    @Value("${kafka.bootstrap.servers}")
-    private String bootstrapServers;
-
-    @Value("${application.stream.applicationId}")
-    private String applicationId;
-
-
-    @Bean(name = KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_CONFIG_BEAN_NAME)
-    public StreamsConfig streamsConfig() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
-        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-
-        return new StreamsConfig(props);
-    }
 
     @Bean
     public KStream<String, SensorData> kStream(StreamsBuilder builder) {
@@ -49,10 +34,10 @@ public class KafkaStreamConfig {
         JsonSerde<SensorData> sensorDataSerde = new JsonSerde<>(SensorData.class);
         KStream<String, SensorData> sensorDataStream = builder.stream(TopicNames.RECEIVED_SENSOR_DATA, Consumed.with(Serdes.String(), sensorDataSerde));
 
-        //Filter all messages with an ID that starts with "#"
+        //Filter and log all messages with an ID that starts with "#"
         sensorDataStream
                 .filter( (k, v) -> v.getId().startsWith("#"))
-                .foreach((k,v) -> LOGGER.info("received {}", v.toString()));
+                .foreach((k,v) -> LOGGER.info("# detected in {}", v.toString()));
 
         //Write a record to "low-voltage-alert" topic whenever SensorData comes in with a voltage lower than 3.
         sensorDataStream
@@ -73,13 +58,13 @@ public class KafkaStreamConfig {
                 .foreach((k,v) -> LOGGER.info("This is a valid sensor. {}", v.toString()));
 
 
-        //Group the messages by id, in a hopping time window with a size 5 minutes and an advance interval of 1 minute and calculate average temperature.
+        //Group the messages by id, in a hopping time window with a size of 5 minutes and an advance interval of 1 minute and calculate average temperature.
         sensorDataStream.groupByKey()
-                .windowedBy(TimeWindows.of(300000).advanceBy(60000))
+                .windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofSeconds(300)).advanceBy(Duration.ofSeconds(60)))
                 .aggregate(SumCount::new, (key, value, aggregate) -> aggregate.addValue(value.getTemperature()), Materialized.with(Serdes.String(), new JsonSerde<>(SumCount.class)))
-                .mapValues(SumCount::average, Materialized.with(new WindowedSerde<>(Serdes.String()), Serdes.Double()))
+                .mapValues(SumCount::average, Materialized.with(new WindowedSerde<>(Serdes.String(), 300_000L), Serdes.Double()))
                 .toStream()
-                .map(((key, average) -> new KeyValue<>(key.key(), new Average(average, key.window().start(), key.window().start() + 300000))))
+                .map(((key, average) -> new KeyValue<>(key.key(), new Average(average, key.window().start(), key.window().end()))))
                 //write to topic and continue the stream processing using KStream.through
                 .through(TopicNames.AVERAGE_TEMPS, Produced.with(Serdes.String(), new JsonSerde<>(Average.class)))
                 .foreach((key, average) -> LOGGER.info(String.format("Received average %s for id %s on %s", average, key, TopicNames.AVERAGE_TEMPS)));
@@ -93,10 +78,10 @@ static class WindowedSerde<T> implements Serde<Windowed<T>> {
 
     private final Serde<Windowed<T>> inner;
 
-    public WindowedSerde(Serde<T> serde) {
+    public WindowedSerde(Serde<T> serde, long windowSize) {
         inner = Serdes.serdeFrom(
-                new WindowedSerializer<>(serde.serializer()),
-                new WindowedDeserializer<>(serde.deserializer()));
+                new TimeWindowedSerializer<>(serde.serializer()),
+                new TimeWindowedDeserializer<>(serde.deserializer(), windowSize));
     }
 
     @Override

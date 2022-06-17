@@ -1,8 +1,7 @@
 # kafkastreams-workshop
 
 ## Prerequisites
-* Make sure you have JDK8 or higher installed
-* Make sure you have Apache Maven installed (optional)
+* Make sure you have JDK11 or higher installed
 * To get started with kafka, execute steps 1 to 5 from the Kafka quickstart guide. This will get you a running Kafka server.
 https://kafka.apache.org/quickstart
 
@@ -20,19 +19,13 @@ https://kafka.apache.org/documentation/
 ## Exercise 1: Spring Kafka
 In this exercise we will use Spring Kafka to setup some simple producing and consuming of messages. We use a JSONSerializer and JSONDeserializer that Spring Kafka provides to write and read our Java object to/from Kafka.
 
-For reference information about Spring Kafka, see https://docs.spring.io/spring-kafka/reference/htmlsingle/
+For reference information about Spring Kafka, see https://docs.spring.io/spring-kafka/docs/current/reference/html/
 
 
 ### Setting up Spring Kafka
-Add the Spring Kafka dependency to your pom.xml
+Add the Spring Kafka dependency to your build.gradle
 ```
-<spring-kafka.version>2.1.6.RELEASE</spring-kafka.version>
-
-<dependency>
-  <groupId>org.springframework.kafka</groupId>
-  <artifactId>spring-kafka</artifactId>
-  <version>${spring-kafka.version}</version>
-</dependency>
+implementation 'org.springframework.kafka:spring-kafka'
 ```
 
 Add the following annotation to the KafkaWorkshopConfig class:
@@ -42,7 +35,7 @@ Add the following annotation to the KafkaWorkshopConfig class:
 
 This enables the Spring Kafka listeners
 
-The Kafka client library needs to know where to find the Kafka server
+The Kafka client library needs to know where to find the Kafka server.
 Add the following property to your application.properties:
 ```
 kafka.bootstrap.servers=localhost:9092
@@ -79,7 +72,7 @@ Update the SensorController class by wiring the KafkaTemplate:
     private KafkaTemplate<String, SensorData> kafkaTemplate;
 ```
 
-Now we can implement the publishing of sensor data in the SensorController class. Use the KafkaTemplate.send method to publish sensor data messages.
+Now we can replace the TODO in the SensorController class and implement the publishing of sensor data. Use the KafkaTemplate.send method to publish sensor data messages.
 
 Some side notes: 
 * Publishing messages is done asynchronously. The KafkaTemplate.send method returns a ListenableFuture.
@@ -123,39 +116,34 @@ public Map<String, Object> consumerConfigs() {
 
 There are a lot more ProducerConfig and ConsumerConfig properties you can set, but for now these are ok. Check the kafka documentation if you want to know more.
 
-Now we can implement a Kafka Listener class. Create a new class, annotate it with @Component and add a method annotated with:
+Now we can implement a Kafka Listener class. Create a new class, annotate it with `@Component` and write a `public void` method annotated with `@KafkaListener(topics = TopicNames.RECEIVED_SENSOR_DATA)` annotation and `SensorData` as parameter. Try logging the received SensorData to be able to see that the listener is receiving messages.
+
 ```
-@KafkaListener(topics = TopicNames.RECEIVED_SENSOR_DATA)
+    @KafkaListener(topics = TopicNames.RECEIVED_SENSOR_DATA)
+    public void listen(SensorData sensorData) {}
 ```
 For specifics, see the Spring Kafka documentation
-
 
 ### Try it out
 Congratulations, you have implemented your first Spring Kafka application. You can try it out now.
 Make sure Kafka and Zookeeper are running and you have created the required topic. (Windows users can use the .bat script)
 ```
-bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic received-sensor-data
+bin/kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic received-sensor-data
 ```
-Browse to http://localhost:8080/sensor and submit some sensor data!
+Start your application with `./gradlew clean bootRun`, Browse to http://localhost:8080/sensor and submit some sensor data!
 
 You should also consider adding some unit test coverage. For now we will skip that and continue with Exercise 2 to learn about Kafka Streams. Exercise 3 will cover unit testing Spring Kafka applications.
 
 ## Exercise 2: Kafka Streams
 In this exercise we will be extending the application built in Exercise 1. We will use the plain Kafka Streams library to implement Kafka Streams processing on top of a Spring Boot application.
 
-Additional Kafka Streams documentation can be found here:
+An extensive Kafka Streams guide can be found here:
 https://kafka.apache.org/11/documentation/streams/developer-guide/
 
 ### Setting up Kafka Streams configuration
-Add the Kafka Streams dependency to your pom.xml:
+Add the Kafka Streams dependency to your build.gradle:
 ```
-<kafka.version>1.1.0</kafka.version>
-
-<dependency>
-  <groupId>org.apache.kafka</groupId>
-  <artifactId>kafka-streams</artifactId>
-  <version>${kafka.version}</version>
-</dependency>
+implementation 'org.apache.kafka:kafka-streams'
 ```
 
 Create a separate Configuration class for the Kafka Streams stuff. And annotate it with
@@ -164,30 +152,10 @@ Create a separate Configuration class for the Kafka Streams stuff. And annotate 
 @EnableKafkaStreams
 ```
 
-Set up a StreamsConfig in the Config class:
-```
-
-@Value("${kafka.bootstrap.servers}")
-private String bootstrapServers;
-
-@Value("${application.stream.applicationId}")
-private String applicationId;
-
-@Bean(name = KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_CONFIG_BEAN_NAME)
-public StreamsConfig streamsConfig() {
-    Map<String, Object> props = new HashMap<>();
-    props.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
-    props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-
-    return new StreamsConfig(props);
-}
-
-```
 Make sure you give your Streams application a unique applicationId. This can not be the same id as the Kafka Consumer groupId from exercise 1! Add the following property to your application.properties
 ```
-application.stream.applicationId=kafkastreams
+spring.kafka.streams.application-id=kafkastreams
 ```
-
 
 ### Building a Stream topology and running it in Spring Boot
 Add a bean method to your KafkaStreamConfig class that accepts a StreamsBuilder and returns a KStream.
@@ -217,7 +185,7 @@ As you can see in the console logging, the Stream is executed on a separate Thre
 ## Next steps, more advanced Streams function
 Now we have a minimal Streams application we can explore the more advanced Streams functions like filtering, mapping, joining, grouping.
 
-### Filter all messages with an ID that starts with "#"
+### Filter and log all messages with an ID that starts with "#"
 Building blocks:
 * use KStream.filter
 
@@ -255,110 +223,13 @@ Building blocks:
 
 Kstream.branch produces an array of streams.
 
-### Group the messages by id, in a hopping time window with a size 5 minutes and an advance interval of 1 minute and calculate average temperature.
+### Group the messages by id, in a hopping time window with a size of 5 minutes and an advance interval of 1 minute and calculate average temperature.
 Building blocks:
 * use KStream.groupBy, windowedBy, aggregate
 See https://kafka.apache.org/documentation/streams/developer-guide/dsl-api.html#hopping-time-windows
 
 
-## Exercise 3: Unit testing Spring Kafka applications
+## TODO Exercise 3: Unit testing Spring Kafka applications
 
-Spring Kafka comes with some tooling for running an embedded Kafka server in your unit tests.
-
-### Configuring Spring Kafka tests
-
-See https://docs.spring.io/spring-kafka/docs/2.1.6.RELEASE/reference/html/_reference.html#testing for details.
-
-Add the following dependencies to your pom.xml:
-```
-<dependency>
-	<groupId>org.springframework.kafka</groupId>
-	<artifactId>spring-kafka-test</artifactId>
-	<version>${spring-kafka.version}</version>
-</dependency>
-<dependency>
-	<groupId>log4j</groupId>
-	<artifactId>log4j</artifactId>
-	<version>1.2.17</version>
-	<scope>test</scope>
-</dependency>
-```
-		
-Because we are using the Kafka 1.1 clients, we will need to make sure the right kafka libraries are available during tests:
-```
-<dependency>
-	<groupId>org.apache.kafka</groupId>
-	<artifactId>kafka_2.11</artifactId>
-	<version>${kafka.version}</version>
-	<scope>test</scope>
-</dependency>
-
-<dependency>
-	<groupId>org.apache.kafka</groupId>
-	<artifactId>kafka_2.11</artifactId>
-	<version>${kafka.version}</version>
-	<classifier>test</classifier>
-	<scope>test</scope>
-</dependency>
-```
-
-To override the configuration during tests, create an application.properties file in src/test/resources.
-Add the following properties:
-```
-kafka.bootstrap.servers=${spring.embedded.kafka.brokers}
-application.consumer.groupid=springkafka
-application.stream.applicationId=kafkastreams
-```
-
-### Enable embedded kafka server
-We will extend the KafkaWorkshopApplicationTests to have an embedded Kafka server running.
-First we add the DirtiesContext and EmbeddedKafka annotations to our class. We include all topics that are used in our application. The class will look like this:
-
-```
-...
-@RunWith(SpringRunner.class)
-@SpringBootTest
-@DirtiesContext
-@EmbeddedKafka(partitions = 1,
-		topics = {
-				TopicNames.RECEIVED_SENSOR_DATA,
-				TopicNames.LOW_VOLTAGE_ALERT,
-				TopicNames.ALLOWED_SENSOR_IDS_KEYED,
-				TopicNames.ALLOWED_SENSOR_IDS,
-				TopicNames.AVERAGE_TEMPS})
-public class KafkaWorkshopApplicationTests {
-...
-```
-Add the KafkaEmbedded that Spring makes available in its context. Also add the SensorController.
-```
-	@Autowired
-	private KafkaEmbedded embeddedKafka;
-
-	@Autowired
-	private SensorController controller;
-```
-
-### Write the tests for low voltage alert
-Create a new test method and use the controller.sensorSubmit method to publish new sensor data and then listen on the embeddedKafka to see if low voltage alerts come in.
-
-Use the following code to consume the alerts. Depending on your message format you might need to use different serializers.
-```
-Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("testGroup", "true", this.embeddedKafka);
-consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-ConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
-Consumer<String, String> consumer = cf.createConsumer();
-this.embeddedKafka.consumeFromAnEmbeddedTopic(consumer, TopicNames.LOW_VOLTAGE_ALERT);
-ConsumerRecords<String, String> alerts = KafkaTestUtils.getRecords(consumer);
-```
-
-You should now be able to receive the alerts. Write assertions to check if the correct alerts are received.
-
-If you like, you can add test cases for the other message flows.
-
-
-
-
-
-Log the resulting windows to see how the average is calculated over multiple partially overlapping windows per id.
+Spring Kafka comes with some tooling for running an embedded Kafka server in your unit tests. 
+TODO update excercise for new Spring and Kafka versions

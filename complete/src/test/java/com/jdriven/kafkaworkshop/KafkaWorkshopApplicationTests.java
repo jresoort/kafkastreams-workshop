@@ -4,22 +4,20 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
-import org.springframework.kafka.test.rule.KafkaEmbedded;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Map;
 
-@RunWith(SpringRunner.class)
+
 @SpringBootTest
 @DirtiesContext
 @EmbeddedKafka(partitions = 1,
@@ -31,15 +29,16 @@ import java.util.Map;
 				TopicNames.AVERAGE_TEMPS})
 public class KafkaWorkshopApplicationTests {
 
-	@Test
-	public void contextLoads() {
-	}
+		@Test
+		void contextLoads() {
+		}
 
-	@Autowired
-	private KafkaEmbedded embeddedKafka;
+		@Autowired
+		private EmbeddedKafkaBroker embeddedKafka;
 
-	@Autowired
-	private SensorController controller;
+		@Autowired
+		private SensorController controller;
+
 
 	@Test
 	public void lowVoltage() throws Exception {
@@ -64,8 +63,8 @@ public class KafkaWorkshopApplicationTests {
 		this.embeddedKafka.consumeFromAnEmbeddedTopic(consumer, TopicNames.LOW_VOLTAGE_ALERT);
 		ConsumerRecords<String, String> alerts = KafkaTestUtils.getRecords(consumer);
 
-		Assert.assertEquals("amount of alerts not correct", 1, alerts.count());
-		Assert.assertTrue("incorrect alert", alerts.iterator().next().value().contains("1111"));
+		Assertions.assertEquals(1, alerts.count(), "amount of alerts not correct");
+		Assertions.assertTrue( alerts.iterator().next().value().contains("1111"), "incorrect alert");
 	}
 
 

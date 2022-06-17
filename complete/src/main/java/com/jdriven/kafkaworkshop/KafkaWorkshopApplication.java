@@ -9,4 +9,5 @@ public class KafkaWorkshopApplication {
     public static void main(String[] args) {
         SpringApplication.run(KafkaWorkshopApplication.class, args);
     }
+
 }
