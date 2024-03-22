@@ -1,8 +1,8 @@
 # kafkastreams-workshop
 
 ## Prerequisites
-* Make sure you have JDK11 or higher installed
-* To get started with kafka, execute steps 1 to 5 from the Kafka quickstart guide. This will get you a running Kafka server.
+* Make sure you have JDK21 or higher installed
+* To get started with kafka, use the docker-compose file in the tocker folder or execute steps 1 to 5 from the Kafka quickstart guide. This will get you a running Kafka server.
 https://kafka.apache.org/quickstart
 
 
