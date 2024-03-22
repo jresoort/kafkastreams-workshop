@@ -2,7 +2,7 @@
 
 ## Prerequisites
 * Make sure you have JDK21 or higher installed
-* To get started with kafka, use the docker-compose file in the tocker folder or execute steps 1 to 5 from the Kafka quickstart guide. This will get you a running Kafka server.
+* To get started with Kafka, use the docker-compose file in the docker folder or execute steps 1 to 5 from the Kafka quickstart guide. This will get you a running Kafka server.
 https://kafka.apache.org/quickstart
 
 
@@ -27,13 +27,6 @@ Add the Spring Kafka dependency to your build.gradle
 ```
 implementation 'org.springframework.kafka:spring-kafka'
 ```
-
-Add the following annotation to the KafkaWorkshopConfig class:
-```
-@EnableKafka
-```
-
-This enables the Spring Kafka listeners
 
 The Kafka client library needs to know where to find the Kafka server.
 Add the following property to your application.properties:
